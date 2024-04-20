@@ -1,4 +1,3 @@
-// Function to execute a SELECT SQL query
 async function executeSELECTQuery(query) {
     // Sample dataset
     const dataset = [
@@ -8,14 +7,29 @@ async function executeSELECTQuery(query) {
     ];
 
     // Parse the query to extract fields and conditions
-    const fields = query.match(/SELECT (.+?) FROM/)[1].split(',').map(field => field.trim());
-    const conditions = query.match(/WHERE (.+)/);
+    const fieldsMatch = query.match(/SELECT (.+?) FROM/);
+    const fields = fieldsMatch ? fieldsMatch[1].split(',').map(field => field.trim()) : [];
+    const conditionsMatch = query.match(/WHERE (.+)/);
+    let result = dataset;
 
     // Apply conditions if provided
-    let result = dataset;
-    if (conditions) {
-        const condition = conditions[1].trim().split('=').map(part => part.trim());
-        result = dataset.filter(item => item[condition[0]] === condition[1]);
+    if (conditionsMatch) {
+        const conditions = conditionsMatch[1].trim().split(/\b(AND)\b/);
+        result = result.filter(item => {
+            return conditions.every(condition => {
+                if (condition.includes('>')) {
+                    const [field, value] = condition.split('>');
+                    return parseInt(item[field.trim()]) > parseInt(value.trim());
+                } else if (condition.includes('!=')) {
+                    const [field, value] = condition.split('!=');
+                    return item[field.trim()] !== value.trim();
+                } else if (condition.includes('=')) {
+                    const [field, value] = condition.split('=');
+                    return item[field.trim()] === value.trim();
+                }
+                return true; // Handle other conditions if needed
+            });
+        });
     }
 
     // Select fields

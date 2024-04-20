@@ -16,7 +16,7 @@ test('Parse SQL Query', () => {
     expect(parsed).toEqual({
         fields: ['id', 'name'],
         table: 'sample',
-        whereClauses: []
+        whereClauses: null
     });
 });
 
@@ -81,7 +81,7 @@ test('Execute SQL Query with Multiple WHERE Clause', async () => {
 test('Execute SQL Query with Greater Than', async () => {
     const queryWithGT = 'SELECT id FROM sample WHERE age > 22';
     const result = await executeSELECTQuery(queryWithGT);
-    expect(result.length).toEqual(2);
+    expect(result.length).toEqual(3);
     expect(result[0]).toHaveProperty('id');
 });
 

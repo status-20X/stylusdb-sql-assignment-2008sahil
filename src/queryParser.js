@@ -7,27 +7,32 @@ function parseQuery(query) {
 
     const selectIndex = query.indexOf('SELECT') + 'SELECT'.length;
     const fromIndex = query.indexOf('FROM');
-    const tableNameAndWhere = query.substring(fromIndex + 'FROM'.length).trim();
+    const whereIndex = query.indexOf('WHERE');
 
-    let tableName, whereClause;
+    const tableNameAndWhere = query.substring(fromIndex + 'FROM'.length, whereIndex !== -1 ? whereIndex : query.length).trim();
 
-    // Extract the table name and where clause
-    const whereIndex = tableNameAndWhere.indexOf('WHERE');
-    if (whereIndex !== -1) {
-        tableName = tableNameAndWhere.substring(0, whereIndex).trim();
-        whereClause = tableNameAndWhere.substring(whereIndex + 'WHERE'.length).trim();
-    } else {
-        tableName = tableNameAndWhere.trim();
-        whereClause = null; // Set whereClause to null when WHERE clause is not present
-    }
+    const tableName = tableNameAndWhere.trim();
 
     const fieldsString = query.substring(selectIndex, fromIndex).trim();
     const fields = fieldsString.split(',').map(field => field.trim());
 
+    let whereClauses = null;
+    if (whereIndex !== -1) {
+        const whereClauseString = query.substring(whereIndex + 'WHERE'.length).trim();
+        const clauses = whereClauseString.split('AND').map(clause => clause.trim());
+
+        whereClauses = clauses.map(clause => {
+            const [field, rest] = clause.split('=').map(part => part.trim());
+            const operator = '=';
+            const value = rest.replace(/['"]+/g, '').trim(); // Remove quotes and trim whitespace
+            return { field, operator, value };
+        });
+    }
+
     return {
         fields,
         table: tableName,
-        whereClause: whereClause
+        whereClauses: whereClauses
     };
 }
 
