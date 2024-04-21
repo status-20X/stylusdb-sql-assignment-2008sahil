@@ -1,37 +1,30 @@
+const csv = require('csv-parser');
 const fs = require('fs');
+const { parse } = require("json2csv");
 
-// Function to read data from a CSV file
 async function readCSV(filePath) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                reject(err);
-                return;
-            }
+    const results = [];
+    
+    try {
+        const stream = fs.createReadStream(filePath)
+            .on('error', error => { throw error; });
 
-            // Split the CSV data into rows
-            const rows = data.split('\n');
-
-            // Extract column headers from the first row
-            const headers = rows.shift().trim().split(',');
-
-            // Initialize an array to store the parsed CSV data
-            const result = [];
-
-            // Iterate over each row and create an object with column headers as keys
-            rows.forEach(row => {
-                const values = row.trim().split(',');
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = values[index];
-                });
-                result.push(obj);
-            });
-
-            resolve(result);
+        await new Promise((resolve, reject) => {
+            stream.pipe(csv())
+                .on('data', (data) => results.push(data))
+                .on('end', () => resolve())
+                .on('error', (error) => reject(error));
         });
-    });
+        
+        return results;
+    } catch (error) {
+        throw error;
+    }
 }
 
-// Export the readCSV function
-module.exports = readCSV;
+async function writeCSV(filename, data) {
+    const csv = parse(data);
+    fs.writeFileSync(filename, csv);
+  }
+
+module.exports = {readCSV,writeCSV};
